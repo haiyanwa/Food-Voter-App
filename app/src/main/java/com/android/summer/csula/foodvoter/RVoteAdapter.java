@@ -7,12 +7,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import com.android.summer.csula.foodvoter.models.BusinessVoteHelper;
 import com.android.summer.csula.foodvoter.yelpApi.models.Business;
 import com.android.summer.csula.foodvoter.yelpApi.models.Category;
 import com.squareup.picasso.Picasso;
@@ -36,7 +36,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
 
     private final Context mContext;
 
-    private List<Business> mChoiceData;
+    private List<BusinessVoteHelper> mChoiceData;
 
     private final int ListItem = 0;
     private final int EndOfList= 1;
@@ -61,9 +61,21 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
     }*/
     public RVoteAdapter(@NonNull Context context, List<Business> businesses, ListItemClickListener listener, SwitchListener swListener) {
         mContext = context;
-        mChoiceData = (ArrayList)businesses;
+        mChoiceData = wrapBusiness(businesses);
         mOnClickListener = listener;
         switchListener = swListener;
+    }
+
+    /**
+     * Wrap every bussiness object into a BusinesVoteHelper class so we can store data for it is
+     * is selected or not.
+     */
+    private static List<BusinessVoteHelper> wrapBusiness(List<Business> businesses) {
+        List<BusinessVoteHelper> businessVoteHelpers = new ArrayList<>();
+        for (Business business : businesses) {
+            businessVoteHelpers.add(new BusinessVoteHelper(business));
+        }
+        return businessVoteHelpers;
     }
 
     @Override
@@ -97,25 +109,13 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
         return mChoiceData.size() + 1;
     }
 
-    public void setBusinesses(List<Business> businesses) {
-        mChoiceData = businesses;
-        notifyDataSetChanged();;
-    }
-
     public void swapData(List<Business> businesses) {
-        // check if this data is the same as the previous data
-        //if same then return
-        if (mChoiceData == businesses) {
-            return;
-        }
         //replace the old data with new data and force the recyclerView to refresh
-        if (businesses != null) {
-            this.mChoiceData = (ArrayList) businesses;
-            this.notifyDataSetChanged();
-        }
+        this.mChoiceData = wrapBusiness(businesses);
+        this.notifyDataSetChanged();
     }
 
-    class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+    class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         public TextView choiceItemView;
         public ImageView choiceImageView;
@@ -125,7 +125,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
         public Button voteButton;
         int index;
 
-        public ViewHolder(View view){
+        public ViewHolder(View view) {
             super(view);
             choiceItemView = (TextView) view.findViewById(R.id.rv_choice_item_title);
             choiceImageView = (ImageView) view.findViewById(R.id.rv_choice_item_image);
@@ -139,9 +139,9 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
         public void bind(ViewHolder holder, int position){
             if(position < mChoiceData.size()){
                 //restaurant restaurant = mChoiceData.get(position);
-                Business business = mChoiceData.get(position);
+                final Business business = mChoiceData.get(position).getBusiness();
                 choiceItemView.setText(business.getName());
-                ArrayList<Category> categories = (ArrayList) business.getCategories();
+                List<Category> categories = business.getCategories();
                 String list = "";
                 for(Category category : categories){
                    list = list + " " + category.getTitle();
@@ -156,15 +156,27 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
 
                 voteSwitch.setTextOn("Yes");
                 voteSwitch.setTextOff("No");
-                voteSwitch.setChecked(false);
 
+                // Switch are checked base on its model (BusinessVoteHelper)
                 index = position;
+                BusinessVoteHelper voteHelper = mChoiceData.get(position);
+                voteSwitch.setChecked(voteHelper.isSelected());
 
-                holder.voteSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener(){
-
+                holder.voteSwitch.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean swiped) {
-                        switchListener.onSwitchSwiped(mChoiceData.get(index), swiped);
+                    public void onClick(View view) {
+                        BusinessVoteHelper voteHelper = mChoiceData.get(getAdapterPosition());
+
+                        // switch a unchecked switch to on, and turn of all other switches
+                        if(!voteHelper.isSelected()) {
+                            deselectAll();
+                            notifyDataSetChanged();
+                        }
+
+                        // update the model
+                        voteHelper.setSelected(!voteHelper.isSelected());
+
+                        switchListener.onSwitchSwiped(voteHelper.getBusiness(), voteHelper.isSelected());
                     }
                 });
             }
@@ -173,8 +185,17 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
         @Override
         public void onClick(View v) {
             int pos = getAdapterPosition();
-            Business business = mChoiceData.get(pos);
+            Business business = mChoiceData.get(pos).getBusiness();
             mOnClickListener.onListItemClick(business);
+        }
+
+        /**
+         * Set BusinessVoteHelper.isSelected to false for all values in mChoiceData
+         */
+        private void deselectAll() {
+            for (BusinessVoteHelper businessVoteHelper : mChoiceData) {
+                businessVoteHelper.setSelected(false);
+            }
         }
     }
 }
