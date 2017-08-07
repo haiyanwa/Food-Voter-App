@@ -45,7 +45,7 @@ public class PollIntentService extends IntentService {
             Yelp yelp = RequestYelpSearchTask.execute(url);
             List<Business> businesses = yelp.getBusinesses();
             List<Business> selections = BusinessUtilities.getRandoms(businesses);
-            poll.setBusinesses(businesses);
+            poll.setBusinesses(selections);
             PollUtilities.writeToFirebase(poll);
             broadcastPollWriteStatus(HomeActivity.PollBroadcastReceiver.ACTION_SUCCESSFUL_WRITE);
 
