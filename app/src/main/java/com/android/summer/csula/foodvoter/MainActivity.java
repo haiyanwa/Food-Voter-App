@@ -5,12 +5,11 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button shayBtn;
-    private Button yosepBtn;
-    private Button haiyanBtn;
+    private Button homeBtn;
     private Button kailaBtn;
     private Button samanBtn;
 
@@ -21,31 +20,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
-        shayBtn = (Button) findViewById(R.id.shay_btn);
-        shayBtn.setOnClickListener(new View.OnClickListener() {
+        homeBtn= (Button) findViewById(R.id.home_btn);
+        homeBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 launchActivityIntent = new Intent(MainActivity.this, HomeActivity.class);
-                startActivity(launchActivityIntent);
-            }
-        });
-
-
-        yosepBtn = (Button) findViewById(R.id.yosep_btn);
-        yosepBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                launchActivityIntent = new Intent(MainActivity.this, DetailActivity.class);
-                startActivity(launchActivityIntent);
-            }
-        });
-
-        haiyanBtn = (Button) findViewById(R.id.haiyan_btn);
-        haiyanBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                launchActivityIntent = new Intent(MainActivity.this, ListActivity.class);
                 startActivity(launchActivityIntent);
             }
         });
