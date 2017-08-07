@@ -4,15 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.text.util.Linkify;
-import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.ImageView;
@@ -20,24 +16,20 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.android.summer.csula.foodvoter.models.Details;
-
-
 import com.android.summer.csula.foodvoter.yelpApi.models.Business;
-import com.android.summer.csula.foodvoter.yelpApi.models.Yelp;
-import com.android.summer.csula.foodvoter.yelpApi.tasks.RequestYelpSearchTask;
-import com.android.volley.RequestQueue;
+import com.android.summer.csula.foodvoter.yelpApi.models.Coordinate;
 import com.squareup.picasso.Picasso;
-
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import java.io.InputStream;
+import java.util.List;
+
 
 public class DetailActivity extends AppCompatActivity {
+    private static final String EXTRA_BUSINESS = "business";
     public TextView mName, mPhone, mAddress, mUrl, mPrice;
     public ImageView mImageURL;
     public RatingBar mRating;
@@ -54,14 +46,11 @@ public class DetailActivity extends AppCompatActivity {
 //    static final String STATIC_MAP_API_ENDPOINT = "http://maps.google.com/maps/api/staticmap?center=34.004507,-118.256703&zoom=13&markers=size:mid|color:red|label:E|34.004507,-118.256703&size=1500x300&sensor=false";
 
 
-//
-//    public static Intent newIntent(Context context, Business business) {
-//        Intent intent = new Intent(context, DetailActivity.class);
-//        intent.putExtra("name", business.getName());
-//        intent.putExtra("display_phone", business.getName());
-//        intent.putExtra("display_address", business.getName());
-//        return intent;
-//    }
+    public static Intent newIntent(Context context, Business business) {
+        Intent intent = new Intent(context, DetailActivity.class);
+        intent.putExtra(EXTRA_BUSINESS, business);
+        return intent;
+    }
 
 
 //    Intent intent = getIntent();
@@ -84,40 +73,30 @@ public class DetailActivity extends AppCompatActivity {
         Intent intent = getIntent();
         Bundle bundle = intent.getExtras();
         if(bundle!=null){
-            String rest_Name = bundle.getString("name");
-            String phone_number = bundle.getString("display_phone");
-            String image_url = bundle.getString("image_url");
-            String url = bundle.getString("url");
-            String address = bundle.getString("display_address");
-            String ratings = bundle.getString("ratings");
-            String longitude = bundle.getString("longitude");
-            String latitude = bundle.getString("latitude");
+            mBusiness = (Business) getIntent().getSerializableExtra(EXTRA_BUSINESS);
 
-            mName.setText(rest_Name);
-            mPhone.setText(phone_number);
-            mAddress.setText(address);
-            mRating.setRating(Float.parseFloat(ratings));
-//            mPrice.setText(price);
+            mName.setText(mBusiness.getName());
+            mPhone.setText(mBusiness.getDisplayPhone());
+            mAddress.setText(parseAddressArray(mBusiness.getLocation().getDisplayAddress()));
+            mRating.setRating((float) mBusiness.getRating());
 
+            CheckboxChecking(mBusiness.getPrice());
 
-            price = bundle.getString("price");
-            CheckboxChecking(price);
-
-            mUrl.setText(url);
+            mUrl.setText(mBusiness.getUrl());
             Linkify.addLinks(mUrl, Linkify.WEB_URLS);
 
             ImageView mImgURL = (ImageView) findViewById(R.id.imgURL);
             Picasso.with(this)
-                    .load(image_url)
+                    .load(mBusiness.getImageUrl())
                     .into(mImgURL);
 
 
-
-            MAP_API_ENDPOINT ="http://maps.google.com/maps/api/staticmap?center="+longitude+","+latitude+"&zoom=15&size=2000x500&scale=2&sensor=false";
+            Coordinate coordinate = mBusiness.getCoordinate();
+            MAP_API_ENDPOINT ="http://maps.google.com/maps/api/staticmap?center="+coordinate.getLatitude()+","+coordinate.getLongitude()+"&zoom=15&size=2000x500&scale=2&sensor=false";
 
             //setting Rest Name for collapsingToolbar
             CollapsingToolbarLayout collapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
-            collapsingToolbar.setTitle(rest_Name);
+            collapsingToolbar.setTitle(mBusiness.getName());
             collapsingToolbar.setExpandedTitleTextAppearance(R.style.ExpandedAppBar);
             collapsingToolbar.setCollapsedTitleTextAppearance(R.style.CollapsedAppBar);
         }
@@ -223,4 +202,11 @@ public class DetailActivity extends AppCompatActivity {
 
 
 
+    private static String parseAddressArray(List<String> displayAddress){
+        String address = "";
+        for (String str : displayAddress) {
+            address += str + "\n";
+        }
+        return address;
+    }
 }

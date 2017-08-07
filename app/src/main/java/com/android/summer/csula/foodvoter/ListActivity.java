@@ -3,6 +3,7 @@ package com.android.summer.csula.foodvoter;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -10,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.android.summer.csula.foodvoter.models.Vote;
 import com.android.summer.csula.foodvoter.polls.models.Poll;
 import com.android.summer.csula.foodvoter.yelpApi.models.Business;
 import com.android.summer.csula.foodvoter.yelpApi.models.Coordinate;
@@ -23,33 +25,28 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static com.android.summer.csula.foodvoter.demos.FirebasePollBusinesses.SELECTED_POLL_ID;
 
 public class ListActivity extends AppCompatActivity implements RVoteAdapter.ListItemClickListener, RVoteAdapter.SwitchListener {
 
     private static final String EXTRA_POLL = "poll";
     private static final String POLLS_TREE = "polls";
+    private static final String VOTES_TREE = "votes";
+    private static final String TOAST_VOTE_RECORDED = "You're vote is recorded!";
+    private static final String TOAST_VOTE_ABSENT =  "You haven't made a choice yet!";
+    private static final String TOAST_WELCOME_MSG =  "Pleace select a place you like!";
 
     private RVoteAdapter rVoteAdapter;
     private RecyclerView rVoteRecyclerView;
     private List<Business> rChoiceData;
     private Toast mToast;
-    public static final String ANONYMOUS = "anonymous";
-    //private Button mSendVoteBtn;
     private final static String TAG = "ListActivity";
 
-    public static final String POLLS = "polls";
-    public static final String VOTES = "votes";
-
     private Business votedBusiness;
-    private String mUsername = ANONYMOUS;
-
     private DatabaseReference pollRef;      // polls/{id}
     private Poll poll;                      // the object corresponding to polls/{id}
+    private DatabaseReference voteRef;      // polls/{id}/votes/{id}/  key-value <String, String>
+    private String userId;
 
 
     public static Intent newIntent(Context context, Poll poll) {
@@ -66,14 +63,19 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.List
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
-        //mSendVoteBtn = (Button) findViewById(R.id.rv_vote_btn);
 
         rVoteRecyclerView = (RecyclerView) findViewById(R.id.rv_vote_list);
-        rChoiceData = new ArrayList<Business>();
+        rChoiceData = new ArrayList<>();
         rVoteAdapter = new RVoteAdapter(this,rChoiceData,this,this);
         rVoteRecyclerView.setAdapter(rVoteAdapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         rVoteRecyclerView.setLayoutManager(layoutManager);
+
+        userId = getCurrentUserId();
+
+        // This seems like the only way you can instantiate a toast object.
+        mToast = Toast.makeText(this, TOAST_WELCOME_MSG, Toast.LENGTH_SHORT);
+        mToast.show();
     }
 
 
@@ -81,108 +83,89 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.List
     protected void onResume() {
         super.onResume();
 
-        initializePollRef();
+        initializeDatabaseReference();
     }
 
     @Override
     public void onListItemClick(Business business) {
-
-        /**if(mToast != null){
-            mToast.cancel();
-        }
-        String toastMessage = "Item " + business.getName() + " has been clicked.";
-        mToast = Toast.makeText(this, toastMessage, Toast.LENGTH_LONG);
-        mToast.show();**/
-
-        Intent intent = new Intent(this, DetailActivity.class);
-
-        Log.d(TAG, "intent passed details " + business.getCoordinate().getLatitude() + " " + business.getCoordinate().getLongitude());
-
-        Location location = new Location();
-        Coordinate coordinate = new Coordinate();
-        location = business.getLocation();
-        coordinate = business.getCoordinate();
-        String address = location.getDisplayAddress().toString().substring(1,(location.getDisplayAddress().toString().length())-1);
-        String rating = String.valueOf(business.getRating());
-        intent.putExtra("display_phone", business.getDisplayPhone());
-        intent.putExtra("name", business.getName());
-        intent.putExtra("image_url", business.getImageUrl());
-        intent.putExtra("url", business.getUrl());
-        intent.putExtra("display_address", address);
-        intent.putExtra("ratings", rating);
-        intent.putExtra("price", business.getPrice());
-        intent.putExtra("latitude",String.valueOf(business.getCoordinate().getLongitude()));
-        intent.putExtra("longitude",  String.valueOf(business.getCoordinate().getLatitude()));
-
-//        Log.d("ppp",  String.valueOf(business.getCoordinate().getLongitude()));
-//        Log.d("ppp",  String.valueOf(business.getCoordinate().getLatitude()));
-
+        Intent intent = DetailActivity.newIntent(this, business);
         startActivity(intent);
     }
 
-    private void initializePollRef() {
+    /**
+     * set up Firebase Database Reference to the polls node and the current vote node
+     */
+    private void initializeDatabaseReference() {
         String pollId = getExtraPollId(getIntent());
-        pollRef = getPollRef(pollId);
+        pollRef = buildPollRef(pollId);
+        voteRef = buildVoteRef(pollRef, userId);
         attachSingleValueListenerToPoll();
     }
 
     @Override
     public void onSwitchSwiped(Business business, boolean swiped) {
-        if(mToast != null){
-            mToast.cancel();
-        }
         String toastMessage = "";
+
         if(swiped){
             toastMessage = "Voted for " + business.getName();
+            votedBusiness = business;
         }else{
             toastMessage = "Switched off for " + business.getName();
+            votedBusiness = null;
         }
-        votedBusiness = business;
-        Log.d(TAG, "Voted for: " + votedBusiness);
 
-        mToast = Toast.makeText(this, toastMessage, Toast.LENGTH_LONG);
-        mToast.show();
+        showShortToast(toastMessage);
     }
 
     //For SendMyVote Button
     public void sendVote(View v){
-        String message = "Send my vote for " + votedBusiness.getName();
-        String SELECTED_POLL_ID = getExtraPollId(getIntent());
-        final DatabaseReference dbReference = FirebaseDatabase.getInstance().getReference()
-                .child(POLLS)
-                .child(SELECTED_POLL_ID)
-                .child(VOTES);
-
-        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-        FirebaseUser user = firebaseAuth.getCurrentUser();
-        String userId = user.getUid();
-
-        if(user != null){
-
-            final DatabaseReference voteRef = FirebaseDatabase.getInstance().getReference()
-                    .child(POLLS)
-                    .child(SELECTED_POLL_ID)
-                    .child(VOTES);
-
-            Map<String, Object> votes = new HashMap<String, Object>();
-
-            String userid = user.getUid();
-            votes.put(userid, votedBusiness.getId());
-            Log.d(TAG, "userid " + userid);
-            dbReference.setValue(votes);
-            mToast = Toast.makeText(this, "Sent vote!", Toast.LENGTH_LONG);
-            mToast.show();
-        }else{
-            mToast = Toast.makeText(this, "Cannot find user. Failed to vote...", Toast.LENGTH_LONG);
-            mToast.show();
+        // Don't send vote if they user haven't voted yet!
+        if (votedBusiness == null) {
+            showShortToast(TOAST_VOTE_ABSENT);
+            return;
         }
 
+        // Business' id may look like business' name: "good-burger-place"
+        Vote vote = new Vote(userId, votedBusiness.getId());
+
+        // Warning, the vote is not recorded onto the Poll.class, only onto firebase json node
+        writeVoteToFirebase(voteRef, vote);
+        showShortToast(buildChoiceMessage(votedBusiness));
+    }
+
+    private static String buildChoiceMessage(Business business) {
+        return TOAST_VOTE_RECORDED + " " + "You selected " + business.getName();
+    }
+    private void showShortToast(String message) {
+        mToast.setText(message);
+        mToast.setDuration(Toast.LENGTH_SHORT);
+        mToast.show();
+    }
+
+    private void writeVoteToFirebase(DatabaseReference userVoteReference, Vote vote) {
+        userVoteReference.setValue(vote.getBusinessId());
+    }
+
+    /**
+     * Return the id of the current logged in user.
+     */
+    private static String getCurrentUserId() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        return firebaseUser == null ? null : firebaseUser.getUid();
+    }
+
+    /**
+     * polls/{poll_id}/votes{user_id}/
+     * Return Database reference of the currently logged in user voting JSON tree.
+     */
+    public DatabaseReference buildVoteRef(DatabaseReference pollReference, String userId) {
+        return pollReference.child(VOTES_TREE).child(userId);
     }
 
     /**
      * Returns a DatabaseReference to polls/{pollId}.
      */
-    private DatabaseReference getPollRef(String pollId) {
+    private DatabaseReference buildPollRef(String pollId) {
         return FirebaseDatabase.getInstance()
                 .getReference()
                 .child(POLLS_TREE)
@@ -200,7 +183,7 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.List
                 poll = dataSnapshot.getValue(Poll.class);
 
                 if (poll != null) {
-                    rVoteAdapter.setBusinesses(poll.getBusinesses());
+                    rVoteAdapter.swapData(poll.getBusinesses());
                 }
             }
 
