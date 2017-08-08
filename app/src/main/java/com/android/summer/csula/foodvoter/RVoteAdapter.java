@@ -6,7 +6,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.RatingBar;
@@ -24,50 +23,30 @@ import java.util.List;
  * Created by Haiyan on 7/19/17.
  */
 
-public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
+public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> {
 
-    final private ListItemClickListener mOnClickListener;
-
-    private SwitchListener switchListener;
-
-    private static int viewHolderCount;
-
-    private int mNumberItems;
-
-    private final Context mContext;
-
+    private OnBusinessEventListener listener;
     private List<BusinessVoteHelper> mChoiceData;
-
-    private final int ListItem = 0;
-    private final int EndOfList= 1;
-
     private String TAG = "RVoteAdapter";
+    private boolean canVote;  // used to disable some UI features
 
-    public interface ListItemClickListener{
+
+    /**
+     * Help communicate when the viewHolder is click or when a checkbox is clicked
+     */
+    public interface OnBusinessEventListener {
         void onListItemClick(Business business);
+
+        void onVoteCheckboxClick(Business swipedItem, boolean swiped);
     }
 
-    public interface SwitchListener{
-        //void onSwitchSwiped(int swipedItemIndex, boolean swiped);
-        void onSwitchSwiped(Business swipedItem, boolean swiped);
-    }
-
-
-    /**public RVoteAdapter(List<restaurant> restaurants, ListItemClickListener listener, SwitchListener swListener) {
-        mChoiceData = restaurants;
-        mOnClickListener = listener;
-        switchListener = swListener;
-
-    }*/
-    public RVoteAdapter(@NonNull Context context, List<Business> businesses, ListItemClickListener listener, SwitchListener swListener) {
-        mContext = context;
-        mChoiceData = wrapBusiness(businesses);
-        mOnClickListener = listener;
-        switchListener = swListener;
+    public RVoteAdapter(OnBusinessEventListener listener, boolean canVote) {
+        this.listener = listener;
+        this.canVote = canVote;
     }
 
     /**
-     * Wrap every bussiness object into a BusinesVoteHelper class so we can store data for it is
+     * Wrap every business object into a BusinesVoteHelper class so we can store data for it is
      * is selected or not.
      */
     private static List<BusinessVoteHelper> wrapBusiness(List<Business> businesses) {
@@ -76,11 +55,6 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
             businessVoteHelpers.add(new BusinessVoteHelper(business));
         }
         return businessVoteHelpers;
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-        return (position == mChoiceData.size()) ? EndOfList : ListItem;
     }
 
     @Override
@@ -114,9 +88,12 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
         public TextView choiceDescView;
         public RatingBar choiceRatingView;
         public CheckBox voteCheckbox;
+        private View view;
 
         public ViewHolder(View view) {
             super(view);
+            this.view = view;
+
             choiceItemView = (TextView) view.findViewById(R.id.rv_choice_item_title);
             choiceImageView = (ImageView) view.findViewById(R.id.rv_choice_item_image);
             choiceDescView = (TextView) view.findViewById(R.id.rv_choice_item_desc);
@@ -127,6 +104,8 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
             // when they trying to click on the checkbox
             view.setOnLongClickListener(this);
             choiceImageView.setOnClickListener(this);
+
+            voteCheckbox.setEnabled(canVote);
             voteCheckbox.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -141,26 +120,26 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
                     // update the model
                     voteHelper.setSelected(!voteHelper.isSelected());
 
-                    switchListener.onSwitchSwiped(voteHelper.getBusiness(), voteHelper.isSelected());
+                    listener.onVoteCheckboxClick(voteHelper.getBusiness(), voteHelper.isSelected());
                 }
             });
         }
 
-        public void bind(ViewHolder holder, int position){
-            if(position < mChoiceData.size()){
+        public void bind(ViewHolder holder, int position) {
+            if (position < mChoiceData.size()) {
                 //restaurant restaurant = mChoiceData.get(position);
                 final Business business = mChoiceData.get(position).getBusiness();
                 choiceItemView.setText(business.getName());
                 List<Category> categories = business.getCategories();
                 String list = "";
-                for(Category category : categories){
-                   list = list + " " + category.getTitle();
+                for (Category category : categories) {
+                    list = list + " " + category.getTitle();
                 }
                 choiceDescView.setText(list);
-                choiceRatingView.setRating((float)business.getRating());
+                choiceRatingView.setRating((float) business.getRating());
 
                 String imageUri = business.getImageUrl();
-                Picasso.with(mContext).load(imageUri).fit().centerCrop()
+                Picasso.with(view.getContext()).load(imageUri).fit().centerCrop()
                         .placeholder(R.drawable.restaurant_default_image)
                         .into(choiceImageView);
 
@@ -184,7 +163,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
         public boolean onLongClick(View view) {
             int pos = getAdapterPosition();
             Business business = mChoiceData.get(pos).getBusiness();
-            mOnClickListener.onListItemClick(business);
+            listener.onListItemClick(business);
             return true;
         }
 
@@ -192,7 +171,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder>{
         public void onClick(View view) {
             int pos = getAdapterPosition();
             Business business = mChoiceData.get(pos).getBusiness();
-            mOnClickListener.onListItemClick(business);
+            listener.onListItemClick(business);
         }
     }
 }
