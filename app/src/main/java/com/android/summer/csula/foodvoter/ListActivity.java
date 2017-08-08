@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 
@@ -136,9 +137,11 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.List
     private static String buildChoiceMessage(Business business) {
         return TOAST_VOTE_RECORDED + " " + "You selected " + business.getName();
     }
+
     private void showShortToast(String message) {
         mToast.setText(message);
-        mToast.setDuration(Toast.LENGTH_SHORT);
+        mToast.setDuration(Toast.LENGTH_LONG);
+        mToast.setGravity(Gravity.TOP, 0, 0);
         mToast.show();
     }
 
