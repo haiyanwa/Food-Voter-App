@@ -1,16 +1,12 @@
 package com.android.summer.csula.foodvoter.pushNotifications;
 
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.content.Context;
-import android.media.RingtoneManager;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.android.summer.csula.foodvoter.R;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import java.util.Map;
 
 /*
  * A service that extends FirebaseMessagingService. This is required if you want to
@@ -27,22 +23,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        Log.d(TAG, "onMessageReceived => data: " + remoteMessage.getData());
-        RemoteMessage.Notification notification = remoteMessage.getNotification();
 
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.mipmap.food_icon)
-                .setContentTitle(remoteMessage.getData().get("title"))
-                .setContentText(remoteMessage.getData().get("body"))
-                .setDefaults(Notification.DEFAULT_VIBRATE)
-                .setPriority(Notification.PRIORITY_MAX)
-                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-                .setAutoCancel(true);
+        Map<String, String> data = remoteMessage.getData();
+        Log.d(TAG, "onMessageReceived => data: " + data);
 
-
-        NotificationManager notificationManager = (NotificationManager)
-                this.getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(66, notificationBuilder.build());
-
+        PollNotificationUtils.notifyUserOfPollInvites(this, data);
     }
 }
