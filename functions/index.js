@@ -19,7 +19,8 @@ exports.messageVoters = functions.database.ref("/polls/{id}/voters")
                     username: dataSnapshot.val().author.username,
                     title: dataSnapshot.val().title,
                     description: dataSnapshot.val().description,
-                    timeLimitInMs: dataSnapshot.val().timeLimitInMs
+                    timeLimitInMs: dataSnapshot.val().timeLimitInMs,
+                    id: dataSnapshot.val().pollId
                 }
             })
             // use the poll info to create a payload and send it to all the voters
@@ -29,7 +30,8 @@ exports.messageVoters = functions.database.ref("/polls/{id}/voters")
                 const payload = {
                     data: {
                         title: `You're in invited by ${poll.username} to vote in Food Poll!`,
-                        body: `${poll.title} -  ${poll.description}. Good Luck Friend!`
+                        body: `${poll.title} -  ${poll.description}. Good Luck Friend!`,
+                        pollId: poll.id
                     }
                 };
 

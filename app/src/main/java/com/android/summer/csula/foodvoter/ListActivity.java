@@ -50,9 +50,9 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.List
     private String userId;
 
 
-    public static Intent newIntent(Context context, Poll poll) {
+    public static Intent newIntent(Context context, String pollId) {
         Intent intent = new Intent(context, ListActivity.class);
-        intent.putExtra(EXTRA_POLL, poll.getPollId());
+        intent.putExtra(EXTRA_POLL, pollId);
         return intent;
     }
 

@@ -14,7 +14,7 @@ public abstract class PollFragment extends Fragment implements PollsAdapter.OnPo
 
     @Override
     public void onPollClick(Poll poll) {
-        Intent intent = ListActivity.newIntent(getContext(), poll);
+        Intent intent = ListActivity.newIntent(getContext(), poll.getPollId());
         startActivity(intent);
     }
 }

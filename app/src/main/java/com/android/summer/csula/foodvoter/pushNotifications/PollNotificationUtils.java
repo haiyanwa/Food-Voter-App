@@ -14,6 +14,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 
 import com.android.summer.csula.foodvoter.HomeActivity;
+import com.android.summer.csula.foodvoter.ListActivity;
 import com.android.summer.csula.foodvoter.R;
 
 import java.util.Map;
@@ -29,18 +30,19 @@ public class PollNotificationUtils {
     public static final class Data {
         public static final String TITLE = "title";
         public static final String BODY = "body";
+        public static final String POLL_ID = "pollId";
     }
 
 
-    public static void notifyUserOfPollInvites(Context context, Map<String, String> data) {
+    public static void notifyUserOfPollInvites(Context context, Map<String, String> payload) {
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(context)
                 .setColor(ContextCompat.getColor(context, R.color.colorAccent))
                 .setLargeIcon(buildLargeIcon(context))
                 .setSmallIcon(R.mipmap.food_icon)
-                .setContentTitle(data.get(Data.TITLE))
-                .setContentText(data.get(Data.BODY))
-                .setContentIntent(contentIntent(context))
+                .setContentTitle(payload.get(Data.TITLE))
+                .setContentText(payload.get(Data.BODY))
+                .setContentIntent(contentIntent(context, payload.get(Data.POLL_ID)))
                 .setDefaults(Notification.DEFAULT_VIBRATE)
                 .setPriority(Notification.PRIORITY_MAX)
                 .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
@@ -61,8 +63,8 @@ public class PollNotificationUtils {
         notificationManager.cancelAll();
     }
 
-    private static PendingIntent contentIntent(Context context) {
-        Intent startHomeActivityIntent = new Intent(context, HomeActivity.class);
+    private static PendingIntent contentIntent(Context context, String pollId) {
+        Intent startHomeActivityIntent = ListActivity.newIntent(context, pollId);
         return PendingIntent.getActivity(
                 context,
                 REQUEST_CODE_PENDING_INTENT,
