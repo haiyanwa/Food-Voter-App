@@ -36,12 +36,7 @@
     </activity>
     <activity android:name=".ListActivity">
     </activity>
-    <activity android:name=".DetailActivity"
-        android:parentActivityName=".ListActivity">
-        <meta-data
-          android:name="android.support.PARENT_ACTIVITY"
-          android:value=".ListActivity" />
-    </activity>
+    <activity android:name=".DetailActivity"></activity>
     <activity android:name=".TableResultActivity">
     </activity>
     <activity android:name=".GraphResultActivity">
