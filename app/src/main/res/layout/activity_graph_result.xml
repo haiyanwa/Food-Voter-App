@@ -14,4 +14,11 @@
         android:text="Graph activity"
         android:layout_height="wrap_content"/>
 
+    <com.github.mikephil.charting.charts.BarChart
+        android:layout_width="match_parent"
+        android:layout_height="400dp"
+        android:id="@+id/bargraph"
+        />
+
+
 </android.support.constraint.ConstraintLayout>
