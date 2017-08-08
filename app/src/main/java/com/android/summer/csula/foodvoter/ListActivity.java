@@ -76,6 +76,8 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.List
 
         // This seems like the only way you can instantiate a toast object.
         mToast = Toast.makeText(this, TOAST_WELCOME_MSG, Toast.LENGTH_SHORT);
+        mToast.setGravity(Gravity.TOP, 0, 0);
+        mToast.setDuration(Toast.LENGTH_LONG);
         mToast.show();
     }
 
@@ -140,8 +142,6 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.List
 
     private void showShortToast(String message) {
         mToast.setText(message);
-        mToast.setDuration(Toast.LENGTH_LONG);
-        mToast.setGravity(Gravity.TOP, 0, 0);
         mToast.show();
     }
 

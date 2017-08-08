@@ -20,7 +20,7 @@
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/rv_vote_list"
-        android:layout_width="368dp"
+        android:layout_width="345dp"
         android:layout_height="0dp"
         android:layout_margin="8dp"
         android:layout_weight="1"
