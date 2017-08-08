@@ -1,8 +1,11 @@
 package com.android.summer.csula.foodvoter.models;
 
-public class User {
+import java.io.Serializable;
+
+public class User implements Serializable{
     private String username;
     private String id;
+    private String token;
     private boolean online;
 
     public User() {
@@ -11,6 +14,11 @@ public class User {
     public User(String username, String id) {
         this.username = username;
         this.id = id;
+    }
+
+    public User(String username, String id, boolean online) {
+        this(username, id);
+        this.online = online;
     }
 
     public String getUsername() {
@@ -37,18 +45,30 @@ public class User {
         this.online = online;
     }
 
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
     @Override
     public String toString() {
-        return "{username: " + username + ", id: " + id + ", online: " + online + "}";
+        return "User{" +
+                "username='" + username + '\'' +
+                ", id='" + id + '\'' +
+                ", token='" + token + '\'' +
+                '}';
     }
 
     @Override
     public boolean equals(Object obj) {
-        if(obj == null) {
+        if (obj == null) {
             return false;
         }
 
-        if(!User.class.isAssignableFrom(obj.getClass())){
+        if (!User.class.isAssignableFrom(obj.getClass())) {
             return false;
         }
 

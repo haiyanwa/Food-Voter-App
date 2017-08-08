@@ -10,6 +10,9 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+
+
     }
     buildTypes {
         release {
@@ -23,6 +26,9 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
+
+
+
     })
 
     // Core
@@ -32,12 +38,31 @@ dependencies {
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
     testCompile 'junit:junit:4.12'
 
+    compile 'com.google.android.gms:play-services:11.0.4'
+
     // Firebase libraries
     compile 'com.google.firebase:firebase-core:11.0.1'
     compile 'com.google.firebase:firebase-database:11.0.1'
+    compile 'com.google.firebase:firebase-messaging:11.0.1'
     compile 'com.google.firebase:firebase-auth:11.0.1'
     compile 'com.firebaseui:firebase-ui-auth:2.0.1'
+
     compile 'com.github.PhilJay:MPAndroidChart:v2.2.4'
+
+
+    // Image Library
+    compile 'com.squareup.picasso:picasso:2.5.2'
+
+    //httpclient
+    compile 'org.jbundle.util.osgi.wrapped:org.jbundle.util.osgi.wrapped.org.apache.http.client:4.1.2'
+    compile 'org.apache.httpcomponents:httpclient:4.5'
+
+    //for photo
+    compile 'com.squareup.picasso:picasso:2.5.2'
+
+    compile 'com.android.support:cardview-v7:25.3.1'
+    compile 'com.mcxiaoke.volley:library-aar:1.0.0'
+
 }
 
 apply plugin: 'com.google.gms.google-services'

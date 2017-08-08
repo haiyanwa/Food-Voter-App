@@ -22,37 +22,35 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
     private static final String TAG = UsersAdapter.class.getSimpleName();
 
     private List<User> users = new ArrayList<>();
-    private UserOnClickHandler userOnClickHandler;
+    private UserAdapterListener listener;
+    private  int imageResId;
 
-    public UsersAdapter(UserOnClickHandler userOnClickHandler) {
-        this.userOnClickHandler = userOnClickHandler;
+    public UsersAdapter(UserAdapterListener listener, int imageResId) {
+        this.listener = listener;
+        this.imageResId = imageResId;
     }
+
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
-        int itemResId = R.layout.user_item_list;
         boolean attachToParent = false;
+        int friendItemResId = R.layout.item_users_list;
 
-        View view = inflater.inflate(itemResId, parent, attachToParent);
+        View view = inflater.inflate(friendItemResId, parent, attachToParent);
 
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.bind(position);
+        holder.bind(holder, position);
     }
 
     @Override
     public int getItemCount() {
-        return users.size();
-    }
-
-    public void add(User user) {
-        users.add(user);
-        notifyDataSetChanged();
+        return users == null ? 0 : users.size();
     }
 
     public void clear() {
@@ -60,52 +58,71 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    /* Update is use primarily to update the online status of the users.
-    * It is the only field that can change */
-    public void update(User user) {
-        for (User entry : users) {
-            if (entry.equals(user)) {
-                entry.setOnline(user.isOnline());
+    public void add(User friend) {
+        users.add(friend);
+        notifyDataSetChanged();
+    }
+
+    /* Check if the input user is a "friend" and it is updateOnlineStatus its online status */
+    public void updateOnlineStatus(User updatedUser) {
+        for (User friend : users) {
+            if (friend.equals(updatedUser)) {
+                friend.setOnline(updatedUser.isOnline());
                 notifyDataSetChanged();
                 break;
             }
         }
     }
-    public interface UserOnClickHandler {
-        void onImageButtonClick(User clickedUser);
+
+    public void remove(int position) {
+        users.remove(position);
+        notifyDataSetChanged();
+    }
+
+    public void remove(User user) {
+        boolean removalResult = users.remove(user);
+        notifyDataSetChanged();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView usernameTextView;
-        private ImageButton addUserToFriendButton;
-        private ImageView userPresenceImageView;
+        private TextView username;
+        private ImageView presence;
+        private ImageButton actionButton;
 
         public ViewHolder(View itemView) {
             super(itemView);
-            usernameTextView = (TextView) itemView.findViewById(R.id.tv_username);
-            userPresenceImageView = (ImageView) itemView.findViewById(R.id.iv_user_presence);
-            addUserToFriendButton = (ImageButton) itemView.findViewById(R.id.btn_user_to_friend);
-            addUserToFriendButton.setOnClickListener(new View.OnClickListener() {
+            username = (TextView) itemView.findViewById(R.id.tv_friend_username);
+            presence = (ImageView) itemView.findViewById(R.id.iv_friend_presence);
+            actionButton = (ImageButton) itemView.findViewById(R.id.btn_friend_action);
+            actionButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    User clickedUser = users.get(getAdapterPosition());
-                    userOnClickHandler.onImageButtonClick(clickedUser);
+                    int index = getAdapterPosition();
+                    User user = users.get(index);
+
+                    listener.onUserClick(user);
                 }
             });
         }
 
-        public void bind(int position) {
+        public void bind(ViewHolder holder, int position) {
             User user = users.get(position);
-            Log.d(TAG, "binding user: " + user.toString());
-
-            usernameTextView.setText(user.getUsername());
+            username.setText(user.getUsername());
 
             if (user.isOnline()) {
-                userPresenceImageView.setImageResource(android.R.drawable.presence_online);
+                presence.setImageResource(android.R.drawable.presence_online);
             } else {
-                userPresenceImageView.setImageResource(android.R.drawable.presence_offline);
+                presence.setImageResource(android.R.drawable.presence_offline);
             }
+
+            holder.itemView.setTag(user);
+            actionButton.setImageResource(imageResId);
+
         }
+    }
+
+    public interface UserAdapterListener {
+        void onUserClick(User user);
     }
 }

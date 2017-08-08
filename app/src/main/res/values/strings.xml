@@ -4,4 +4,29 @@
   <string name="btn_start_poll">Start A Poll</string>
   <string name="btn_active_poll">Active Poll</string>
   <string name="tv_friends_list">Friends List</string>
+  <string name="sampe_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin consectetur diam id aliquam scelerisque. Donec ultrices lacus vel dignissim pharetra. Vivamus pharetra augue quis rhoncus placerat. Sed ultricies at risus non cursus. Nam rutrum leo nec placerat consectetur. Vestibulum feugiat eleifend diam, nec interdum augue tincidunt sit amet. Praesent feugiat est auctor lacus consectetur, vitae pellentesque dolor laoreet.</string>
+
+  <string name="friends_menu">Friends</string>
+  <string name="btn_submit_poll">Submit</string>
+  <string name="tv_poll_title">Poll Title</string>
+  <string name="edit_text_poll_title_hint">Enter Poll TItle</string>
+  <string name="edit_text_poll_description_hint">Enter A Description of the Poll</string>
+  <string name="tab_item_invites">Invites</string>
+  <string name="tab_item_settings">Settings</string>
+  <string name="button_submit">Submit</string>
+  <string name="edit_text_zip_code_hint">Zip Code</string>
+  <string name="radio_button_current_location">Current Location</string>
+  <string name="radio_button_use_zip_code">Use Zip Code</string>
+  <string name="text_view_price_filter">Price Filter</string>
+  <string name="text_view_open_now">Open Now?</string>
+  <string name="text_view_invited_title"><u>Invited Friends</u></string>
+  <string name="text_view_friends_list_title"><u>Friends</u></string>
+  <!-- Home Activity Tabs Items -->
+  <string name="tab_item_all_polls">All Polls</string>
+  <string name="tab_item_invited_polls">Invited Polls</string>
+  <string name="ic_local_dinning">Picture of a utensils</string>
+  <string name="textview_completed">status incomplete</string>
+  <string name="textview_description">Description of the poll</string>
+  <string name="textview_poll_title">Title of poll</string>
+
 </resources>
