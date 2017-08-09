@@ -13,7 +13,7 @@
         android:id="@+id/imageview_poll"
         android:layout_width="75dp"
         android:layout_height="75dp"
-        android:layout_marginLeft="16dp"
+        android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:contentDescription="@string/ic_local_dinning"
@@ -24,7 +24,7 @@
 
     <LinearLayout
         android:id="@+id/linearLayout"
-        android:layout_width="wrap_content"
+        android:layout_width="238dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginLeft="8dp"
@@ -35,7 +35,9 @@
         app:layout_constraintHorizontal_bias="0.453"
         app:layout_constraintLeft_toRightOf="@+id/imageview_poll"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="84dp"
+        tools:layout_editor_absoluteY="7dp">
 
 
         <TextView
