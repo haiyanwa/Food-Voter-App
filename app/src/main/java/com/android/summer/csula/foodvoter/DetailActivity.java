@@ -201,11 +201,11 @@ public class DetailActivity extends AppCompatActivity {
     }
 
 
-
+//making sure the address will become one string instead of three .
     private static String parseAddressArray(List<String> displayAddress){
         String address = "";
         for (String str : displayAddress) {
-            address += str + "\n";
+            address += str.trim() + " \n ";
         }
         return address;
     }
