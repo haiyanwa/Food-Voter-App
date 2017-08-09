@@ -2,6 +2,8 @@ package com.android.summer.csula.foodvoter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -161,10 +163,15 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
                 choiceRatingView.setRating((float) business.getRating());
 
                 String imageUri = business.getImageUrl();
-                Picasso.with(view.getContext()).load(imageUri).fit().centerCrop()
-                        .placeholder(R.drawable.restaurant_default_image)
-                        .into(choiceImageView);
-
+                // Sometime Yelps returns an empty URI, check to prevent an IllegalArgumentException
+                if(!TextUtils.isEmpty(imageUri)) {
+                    Picasso.with(view.getContext())
+                            .load(imageUri)
+                            .fit()
+                            .centerCrop()
+                            .placeholder(R.drawable.restaurant_default_image)
+                            .into(choiceImageView);
+                }
 
                 // Switch are checked base on its model (BusinessVoteHelper)
                 BusinessVoteHelper voteHelper = mChoiceData.get(position);
