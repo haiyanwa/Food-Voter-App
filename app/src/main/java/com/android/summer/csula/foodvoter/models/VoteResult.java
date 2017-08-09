@@ -1,26 +1,16 @@
 package com.android.summer.csula.foodvoter.models;
 
 /**
- * Created by Haiyan on 8/5/17.
+ * Created by Haiyan on 8/8/17.
  */
 
-public class Vote {
-    private String userId;
+public class VoteResult {
     private String businessName;
+    private Integer count;
 
-    public Vote() {}
-
-    public Vote(String id, String businessName) {
-        this.userId = id;
+    public VoteResult(String businessName, Integer count){
         this.businessName = businessName;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
+        this.count = count;
     }
 
     public String getBusinessName() {
@@ -29,5 +19,13 @@ public class Vote {
 
     public void setBusinessName(String businessName) {
         this.businessName = businessName;
+    }
+
+    public Integer getCount() {
+        return count;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
     }
 }
