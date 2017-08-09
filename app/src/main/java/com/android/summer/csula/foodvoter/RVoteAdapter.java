@@ -34,7 +34,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
     private String TAG = "RVoteAdapter";
     private boolean canVote;  // used to disable some UI features
 
-    private Map<String, Integer> map = new HashMap<>();
+    private Map<String, Integer> businessCountMap = new HashMap<>();
     /**
      * Help communicate when the viewHolder is click or when a checkbox is clicked
      */
@@ -62,22 +62,24 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
     }
 
     public void addVote(String businessId) {
-        if(map.containsKey(businessId)) {
-            int currentVote = map.get(businessId);
-            map.put(businessId, ++currentVote );
+        if(businessCountMap.containsKey(businessId)) {
+            int currentVote = businessCountMap.get(businessId);
+            businessCountMap.put(businessId, ++currentVote );
         } else {
-            map.put(businessId, 1);
+            businessCountMap.put(businessId, 1);
         }
+        notifyDataSetChanged();
     }
 
     public void removeVote(String businessId) {
-        if(map.containsKey(businessId)) {
-            int currentVote = map.get(businessId);
+        if(businessCountMap.containsKey(businessId)) {
+            int currentVote = businessCountMap.get(businessId);
             if(currentVote <= 1) {
-                map.remove(businessId);
+                businessCountMap.remove(businessId);
             }else {
-                map.put(businessId, --currentVote);
+                businessCountMap.put(businessId, --currentVote);
             }
+            notifyDataSetChanged();
         }
     }
 
@@ -137,7 +139,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
     public void logResults() {
         Log.d(TAG, "");
         Log.d(TAG, "----------" + "adapter" + " logging vote results starts----------");
-        for(Map.Entry<String, Integer> entry : map.entrySet()) {
+        for(Map.Entry<String, Integer> entry : businessCountMap.entrySet()) {
             Log.d(TAG, entry.getKey() + " " + entry.getValue());
         }
         Log.d(TAG, "---------" +  "logging vote results end---------");
@@ -150,6 +152,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
         public TextView choiceDescView;
         public RatingBar choiceRatingView;
         public CheckBox voteCheckbox;
+        private TextView voteCountTextView;
         private View view;
 
         public ViewHolder(View view) {
@@ -161,6 +164,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
             choiceDescView = (TextView) view.findViewById(R.id.rv_choice_item_desc);
             choiceRatingView = (RatingBar) view.findViewById(R.id.rv_choice_ratingBar);
             voteCheckbox = (CheckBox) view.findViewById(R.id.rv_vote_checkbox);
+            voteCountTextView =(TextView) view.findViewById(R.id.vote_count);
 
             // Use long click over normal because people keep accidently clicking on the view
             // when they trying to click on the checkbox
@@ -214,6 +218,9 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
                 // Switch are checked base on its model (BusinessVoteHelper)
                 BusinessVoteHelper voteHelper = mChoiceData.get(position);
                 voteCheckbox.setChecked(voteHelper.isSelected());
+
+                Integer count = businessCountMap.get(voteHelper.getId());
+                voteCountTextView.setText(String.valueOf(count == null ? 0 : count));
             }
         }
 
