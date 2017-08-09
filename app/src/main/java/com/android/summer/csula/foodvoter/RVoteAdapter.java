@@ -19,7 +19,9 @@ import com.android.summer.csula.foodvoter.yelpApi.models.Category;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Haiyan on 7/19/17.
@@ -32,14 +34,14 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
     private String TAG = "RVoteAdapter";
     private boolean canVote;  // used to disable some UI features
 
-
+    private Map<String, Integer> map = new HashMap<>();
     /**
      * Help communicate when the viewHolder is click or when a checkbox is clicked
      */
     public interface OnBusinessEventListener {
         void onListItemClick(Business business);
 
-        void onVoteCheckboxClick(Business swipedItem, boolean swiped);
+        void onVoteCheckboxClick(String businessId, boolean clicked);
     }
 
     public RVoteAdapter(OnBusinessEventListener listener, boolean canVote) {
@@ -57,6 +59,31 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
             businessVoteHelpers.add(new BusinessVoteHelper(business));
         }
         return businessVoteHelpers;
+    }
+
+    public void addVote(String businessId) {
+        if(map.containsKey(businessId)) {
+            int currentVote = map.get(businessId);
+            map.put(businessId, ++currentVote );
+        } else {
+            map.put(businessId, 1);
+        }
+    }
+
+    public void removeVote(String businessId) {
+        if(map.containsKey(businessId)) {
+            int currentVote = map.get(businessId);
+            if(currentVote <= 1) {
+                map.remove(businessId);
+            }else {
+                map.put(businessId, --currentVote);
+            }
+        }
+    }
+
+    public void swapVote(String oldBusinessId, String newBusinessId) {
+        removeVote(oldBusinessId);
+        addVote(newBusinessId);
     }
 
     @Override
@@ -83,7 +110,9 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
         this.notifyDataSetChanged();
     }
 
-    public void recordVote(Vote vote) {
+    public void recordCheckBoxVote(Vote vote) {
+        if(vote == null) return;
+
         for (BusinessVoteHelper businessVoteHelper : mChoiceData) {
             String businessId = businessVoteHelper.getBusiness().getId();
 
@@ -103,6 +132,15 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
         for (BusinessVoteHelper businessVoteHelper : mChoiceData) {
             businessVoteHelper.setSelected(false);
         }
+    }
+
+    public void logResults() {
+        Log.d(TAG, "");
+        Log.d(TAG, "----------" + "adapter" + " logging vote results starts----------");
+        for(Map.Entry<String, Integer> entry : map.entrySet()) {
+            Log.d(TAG, entry.getKey() + " " + entry.getValue());
+        }
+        Log.d(TAG, "---------" +  "logging vote results end---------");
     }
 
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener, View.OnClickListener {
@@ -144,7 +182,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
                     // update the model
                     voteHelper.setSelected(!voteHelper.isSelected());
 
-                    listener.onVoteCheckboxClick(voteHelper.getBusiness(), voteHelper.isSelected());
+                    listener.onVoteCheckboxClick(voteHelper.getId(), voteHelper.isSelected());
                 }
             });
         }

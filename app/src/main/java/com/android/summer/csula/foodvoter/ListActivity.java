@@ -8,11 +8,11 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.widget.Toast;
+import android.util.Log;
 
 import com.android.summer.csula.foodvoter.models.User;
 import com.android.summer.csula.foodvoter.models.Vote;
-import com.android.summer.csula.foodvoter.models.VoteResults;
+import com.android.summer.csula.foodvoter.models.VoteRecord;
 import com.android.summer.csula.foodvoter.polls.models.Poll;
 import com.android.summer.csula.foodvoter.yelpApi.models.Business;
 import com.google.firebase.auth.FirebaseAuth;
@@ -34,23 +34,16 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
     private static final String EXTRA_POLL = "poll";
     private static final String POLLS_TREE = "polls";
     private static final String VOTES_TREE = "votes";
-    private static final String TOAST_VOTE_RECORDED = "You're vote is recorded!";
-    private static final String TOAST_VOTE_ABSENT = "You haven't made a choice yet!";
-    private static final String TOAST_WELCOME_MSG = "Welcome!";
 
     private RVoteAdapter rVoteAdapter;
     private RecyclerView rVoteRecyclerView;
-    private Toast mToast;
 
     private DatabaseReference pollRef;                 // polls/{id}       => Poll.class
     private DatabaseReference votesRef;                // polls/{id}/votes => Map<String,String>
     private ChildEventListener votesChildEventListener;
 
     private Poll poll;                                 // the object corresponding to polls/{id}
-    private Business votedBusiness;
-    private String userId;
-    private VoteResults voteResults;
-    private Vote currentUserVote;
+    private VoteRecord voteRecord;
 
 
     public static Intent newIntent(Context context, String pollId) {
@@ -68,13 +61,7 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
 
-        userId = getCurrentUserId();
-        voteResults = new VoteResults();
-
-        // This seems like the only way you can instantiate a toast object.
-        mToast = Toast.makeText(this, TOAST_WELCOME_MSG, Toast.LENGTH_SHORT);
-        mToast.setDuration(Toast.LENGTH_SHORT);
-        mToast.show();
+        voteRecord = new VoteRecord();
 
         createDatabaseReference();
     }
@@ -100,24 +87,29 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
     }
 
     @Override
-    public void onVoteCheckboxClick(Business business, boolean swiped) {
-        if (swiped) {
-            votedBusiness = business;
+    public void onVoteCheckboxClick(String businessId, boolean checked) {
+        // Warning, the vote is not recorded onto the Poll.class, only onto firebase json node
+        // if businessId
+        Log.d(TAG, "checkbox: " + businessId + " " + "checked: " + checked);
+        if(checked) {
+            writeVoteToFirebase(votesRef, getCurrentUserId(), businessId);
         } else {
-            votedBusiness = null;
+            writeVoteToFirebase(votesRef, getCurrentUserId(), null);
         }
-
-        sendVote();
     }
 
     /**
      * set up Firebase Database Reference to the polls node and the current vote node
      */
     private void createDatabaseReference() {
+        // Retrieve the poll class store in firebase but don't watch for any changes to the data.
         String pollId = getExtraPollId(getIntent());
         pollRef = buildPollRef(pollId);
         attachSingleValueListenerToPoll();
 
+        // Set up a ref to watch for changes in poll/{id}/votes/
+        // Every time a value is added/changed/deleted (poll/{id}/votes{id}/
+        // then they respond to  it accordingly
         votesRef = buildVotesRef(pollRef);
         votesChildEventListener = getVotesChildEventListener();
         attachChildEventListener(votesRef, votesChildEventListener);
@@ -127,34 +119,10 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         detachChildEventListener(votesRef, votesChildEventListener);
     }
 
-    //For SendMyVote Button
-    public void sendVote() {
-        // Don't send vote if they user haven't voted yet!
-        if (votedBusiness == null) {
-            showShortToast(TOAST_VOTE_ABSENT);
-            return;
-        }
-
-        currentUserVote =  new Vote(userId, votedBusiness.getId());
-
-        // Warning, the vote is not recorded onto the Poll.class, only onto firebase json node
-        writeVoteToFirebase(votesRef, currentUserVote);
-        showShortToast(buildChoiceMessage(votedBusiness));
-    }
-
-    private static String buildChoiceMessage(Business business) {
-        return TOAST_VOTE_RECORDED + " " + "You selected " + business.getName();
-    }
-
-    private void showShortToast(String message) {
-        mToast.setText(message);
-        mToast.show();
-    }
-
-    private void writeVoteToFirebase(DatabaseReference inputVoteRef, Vote vote) {
+    private void writeVoteToFirebase(DatabaseReference inputVoteRef, String userId, String businessId) {
         inputVoteRef
-                .child(vote.getUserId())
-                .setValue(vote.getBusinessId());
+                .child(userId)
+                .setValue(businessId);
     }
 
     /**
@@ -198,15 +166,18 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
                 displayVoteDialog(canVote);
                 updateUI(canVote);
 
-
-                // Get the user recorded vote if they have one and update the adapter.
-                // If the user is not invited or none is recorded, nothing will happen
-                String possibleBusinessId =
-                        (String) dataSnapshot.child("votes").child(getCurrentUserId()).getValue();
-                if (possibleBusinessId != null) {
-                    currentUserVote = new Vote(getCurrentUserId(), possibleBusinessId);
-                    rVoteAdapter.recordVote(currentUserVote);
+                // Store each votes recorded onto our VoteResult object
+                DataSnapshot votesDataSnapshot = dataSnapshot.child("votes");
+                for (DataSnapshot singleVoteSnapshot : votesDataSnapshot.getChildren()) {
+                    Vote vote = new Vote(singleVoteSnapshot.getKey(), (String) singleVoteSnapshot.getValue());
+                    voteRecord.recordVote(vote);
+                    rVoteAdapter.addVote(vote.getBusinessId());
                 }
+
+                // Get the vote of the current user, if the user is not invited, then it will be null
+                // Then update the UI checkbox to reflect their recorded vote, if any
+                Vote currentUserVote = voteRecord.voteOf(getCurrentUserId());
+                rVoteAdapter.recordCheckBoxVote(currentUserVote);
             }
 
             @Override
@@ -303,7 +274,6 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         dialog.show();
     }
 
-
     /**
      * This listener will listen the key (UserId) and the value (businessId) of all votes made in:
      * {some_database_reference}/votes. Attach it to a references that contains this key/values pair
@@ -312,18 +282,42 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         return new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-                Vote vote = new Vote(dataSnapshot.getKey(), (String) dataSnapshot.getValue());
-                voteResults.recordVote(vote);
+                String userId = dataSnapshot.getKey();
+                String businessId = (String) dataSnapshot.getValue();
+                Vote vote = new Vote(userId, businessId);
+                voteRecord.recordVote(vote);
+
+                // OnChangedAdded is call once for ALL values in this tree, and then it will
+                // be call whenever a child is added. When it is initially called, the adapter
+                // may not be initialized because it is created inside an async function.
+                if(rVoteAdapter != null) {
+                    rVoteAdapter.addVote(businessId);
+                    rVoteAdapter.logResults();
+                }
             }
 
             @Override
             public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                Vote vote = new Vote(dataSnapshot.getKey(), (String) dataSnapshot.getValue());
-                voteResults.recordVote(vote);
+                String userId = dataSnapshot.getKey();
+                String businessId = (String) dataSnapshot.getValue();
+                Vote vote = new Vote(userId, businessId);
+                String oldBusinessId = voteRecord.voteOf(userId).getBusinessId();
+
+                voteRecord.recordVote(vote);
+                rVoteAdapter.swapVote(oldBusinessId, businessId);
+                rVoteAdapter.logResults();
             }
 
             @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) { }
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                String userId = dataSnapshot.getKey();
+                String businessId = (String) dataSnapshot.getValue();
+                Vote vote = new Vote(userId, businessId);
+
+                voteRecord.removeVote(vote);
+                rVoteAdapter.removeVote(businessId);
+                rVoteAdapter.logResults();
+            }
 
             @Override
             public void onChildMoved(DataSnapshot dataSnapshot, String s) { }
@@ -342,7 +336,7 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
 
     private void detachChildEventListener(DatabaseReference reference,
                                           ChildEventListener childEventListener) {
-        if(childEventListener != null) {
+        if (childEventListener != null) {
             reference.removeEventListener(childEventListener);
         }
     }

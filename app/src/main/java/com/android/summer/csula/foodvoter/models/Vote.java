@@ -10,8 +10,8 @@ public class Vote {
 
     public Vote() {}
 
-    public Vote(String id, String businessId) {
-        this.userId = id;
+    public Vote(String userId, String businessId) {
+        this.userId = userId;
         this.businessId = businessId;
     }
 
