@@ -30,4 +30,12 @@ public class Vote {
     public void setBusinessId(String businessId) {
         this.businessId = businessId;
     }
+
+    @Override
+    public String toString() {
+        return "Vote{" +
+                "userId='" + userId + '\'' +
+                ", businessId='" + businessId + '\'' +
+                '}';
+    }
 }
