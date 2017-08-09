@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.text.SpannableString;
+import android.text.style.UnderlineSpan;
 import android.text.util.Linkify;
 import android.view.View;
 import android.widget.CheckBox;
@@ -28,13 +31,15 @@ import java.io.InputStream;
 import java.util.List;
 
 
-public class DetailActivity extends AppCompatActivity {
+public class DetailActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String EXTRA_BUSINESS = "business";
     public TextView mName, mPhone, mAddress, mUrl, mPrice;
     public ImageView mImageURL;
     public RatingBar mRating;
     public CheckBox mCheckBox$, mCheckBox$$, mCheckBox$$$, mCheckBox$$$$;
     public String price;
+    //this is a seperate intent
+    public Intent addressIntent;
 
     Business mBusiness;
 
@@ -61,7 +66,6 @@ public class DetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
-
 //        mPrice = (TextView) findViewById(R.id.price);
         mName = (TextView) findViewById(R.id.restaurantName);
         mPhone = (TextView) findViewById(R.id.phoneNumber);
@@ -77,7 +81,7 @@ public class DetailActivity extends AppCompatActivity {
 
             mName.setText(mBusiness.getName());
             mPhone.setText(mBusiness.getDisplayPhone());
-            mAddress.setText(parseAddressArray(mBusiness.getLocation().getDisplayAddress()));
+//            mAddress.setText(parseAddressArray(mBusiness.getLocation().getDisplayAddress()));
             mRating.setRating((float) mBusiness.getRating());
 
             CheckboxChecking(mBusiness.getPrice());
@@ -90,6 +94,14 @@ public class DetailActivity extends AppCompatActivity {
                     .load(mBusiness.getImageUrl())
                     .into(mImgURL);
 
+            //making a clickable map
+            SpannableString spanStr = new SpannableString(parseAddressArray(mBusiness.getLocation().getDisplayAddress()).toString());
+            spanStr.setSpan(new UnderlineSpan(), 0, spanStr.length(), 0);
+            mAddress.setText(spanStr);
+            addressIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" +mAddress.getText().toString()));
+
+            //listener for the map clicks on the textview
+            mAddress.setOnClickListener(this);
 
             Coordinate coordinate = mBusiness.getCoordinate();
             MAP_API_ENDPOINT ="http://maps.google.com/maps/api/staticmap?center="+coordinate.getLatitude()+","+coordinate.getLongitude()+"&zoom=15&size=2000x500&scale=2&sensor=false";
@@ -101,12 +113,13 @@ public class DetailActivity extends AppCompatActivity {
             collapsingToolbar.setCollapsedTitleTextAppearance(R.style.CollapsedAppBar);
         }
 
+        //this is for empty data passing through so the program won't crash
         if (bundle == null){
-                    viewModel();
+            viewModel();
         }
 
 
-
+        //creating a static google map image
         AsyncTask<Void, Void, Bitmap> setImageFromUrl = new AsyncTask<Void, Void, Bitmap>(){
             @Override
             protected Bitmap doInBackground(Void... params) {
@@ -132,9 +145,9 @@ public class DetailActivity extends AppCompatActivity {
             }
         };
         setImageFromUrl.execute();
-
     }
 
+    //mainly for UI purposes
     public void CheckboxChecking(String price){
         mCheckBox$ = (CheckBox) findViewById(R.id.$);
         mCheckBox$$ = (CheckBox) findViewById(R.id.$$);
@@ -168,7 +181,6 @@ public class DetailActivity extends AppCompatActivity {
         mUrl = (TextView) findViewById(R.id.url);
         mUrl.setText("http://www.yelp.com/biz/yelp-san-francisco");
         Linkify.addLinks(mUrl, Linkify.WEB_URLS);
-
 
         mPhone = (TextView) findViewById(R.id.phoneNumber);
         details.setPhoneNumber(phoneNumber);
@@ -208,5 +220,12 @@ public class DetailActivity extends AppCompatActivity {
             address += str.trim() + " \n ";
         }
         return address;
+    }
+
+    //making the link connect with the textview
+    @Override
+    public void onClick(View v) {
+        if(v.getId() == R.id.address)
+            startActivity(addressIntent);
     }
 }
