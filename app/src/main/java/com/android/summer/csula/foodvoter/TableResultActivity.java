@@ -34,8 +34,8 @@ public class TableResultActivity extends AppCompatActivity {
     private Poll poll;
     private ChildEventListener mChildEventListener;
     private List<VoteResult> mUserVoteResults;
-    private Map<String, String> mUserVotes = new TreeMap<>();   //Map<UserId, BusinessName>
-    private Map<String, Integer> voteCounts = new TreeMap<>();  //Map<BusinessName, counts>
+    private Map<String, String> mUserVotes = new TreeMap<>();   //Map<UserId, BusinessId>
+    private Map<String, Integer> voteCounts = new TreeMap<>();  //Map<BusinessId, counts>
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,8 +84,8 @@ public class TableResultActivity extends AppCompatActivity {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 for(DataSnapshot snapshot : dataSnapshot.getChildren()){
                     String userid = snapshot.getKey().toString();
-                    String businessName = snapshot.getValue().toString();
-                    Vote vote = new Vote(userid, businessName);
+                    String businessId = snapshot.getValue().toString();
+                    Vote vote = new Vote(userid, businessId);
                     mUserVotes.put(vote.getUserId(), vote.getBusinessId());
                  }
                 countVotes();
@@ -106,16 +106,16 @@ public class TableResultActivity extends AppCompatActivity {
     //count votes and update Map voteCounts
     private void countVotes(){
         for(String userid : mUserVotes.keySet()){
-            String businessName = mUserVotes.get(userid);
+            String businessId = mUserVotes.get(userid);
             if(voteCounts == null){
-                voteCounts.put(businessName, 1);
+                voteCounts.put(businessId, 1);
             }else{
-                if(voteCounts.get(businessName) != null){
-                    int count = voteCounts.get(businessName);
+                if(voteCounts.get(businessId) != null){
+                    int count = voteCounts.get(businessId);
                     count++;
-                    voteCounts.put(businessName, count);
+                    voteCounts.put(businessId, count);
                 }else{
-                    voteCounts.put(businessName,1);
+                    voteCounts.put(businessId,1);
                 }
             }
         }
