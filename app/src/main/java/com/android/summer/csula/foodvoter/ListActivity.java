@@ -91,7 +91,7 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         // Warning, the vote is not recorded onto the Poll.class, only onto firebase json node
         // if businessId
         Log.d(TAG, "checkbox: " + businessId + " " + "checked: " + checked);
-        if(checked) {
+        if (checked) {
             writeVoteToFirebase(votesRef, getCurrentUserId(), businessId);
         } else {
             writeVoteToFirebase(votesRef, getCurrentUserId(), null);
@@ -290,7 +290,7 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
                 // OnChangedAdded is call once for ALL values in this tree, and then it will
                 // be call whenever a child is added. When it is initially called, the adapter
                 // may not be initialized because it is created inside an async function.
-                if(rVoteAdapter != null) {
+                if (rVoteAdapter != null) {
                     rVoteAdapter.addVote(businessId);
                     rVoteAdapter.logResults();
                 }

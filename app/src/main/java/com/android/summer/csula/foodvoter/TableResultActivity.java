@@ -86,12 +86,12 @@ public class TableResultActivity extends AppCompatActivity {
                     String userid = snapshot.getKey().toString();
                     String businessName = snapshot.getValue().toString();
                     Vote vote = new Vote(userid, businessName);
-                    mUserVotes.put(vote.getUserId(), vote.getBusinessName());
+                    mUserVotes.put(vote.getUserId(), vote.getBusinessId());
                  }
                 countVotes();
                 ArrayList<VoteResult> resultList = convertToList(voteCounts);
                 for(int i=0;i<resultList.size();i++){
-                    Log.d(TAG, "Vote " + resultList.get(i).getBusinessName() + " " + resultList.get(i).getCount());
+                    Log.d(TAG, "Vote " + resultList.get(i).getBusinessId() + " " + resultList.get(i).getCount());
                 }
                 resultAdapter.clear();
                 resultAdapter.addAll(resultList);

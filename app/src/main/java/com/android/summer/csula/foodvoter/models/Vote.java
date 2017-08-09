@@ -13,7 +13,6 @@ public class Vote {
     public Vote(String userId, String businessId) {
         this.userId = userId;
         this.businessId = businessId;
-
     }
 
     public String getUserId() {
