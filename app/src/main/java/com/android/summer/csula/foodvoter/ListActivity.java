@@ -8,17 +8,16 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.Gravity;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.android.summer.csula.foodvoter.models.User;
 import com.android.summer.csula.foodvoter.models.Vote;
+import com.android.summer.csula.foodvoter.models.VoteResults;
 import com.android.summer.csula.foodvoter.polls.models.Poll;
 import com.android.summer.csula.foodvoter.yelpApi.models.Business;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -30,6 +29,8 @@ import java.util.List;
 
 public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBusinessEventListener {
 
+    private final static String TAG = "ListActivity";
+
     private static final String EXTRA_POLL = "poll";
     private static final String POLLS_TREE = "polls";
     private static final String VOTES_TREE = "votes";
@@ -40,14 +41,17 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
     private RVoteAdapter rVoteAdapter;
     private RecyclerView rVoteRecyclerView;
     private Toast mToast;
-    private Button voteButton;
-    private final static String TAG = "ListActivity";
 
+    private DatabaseReference pollRef;                 // polls/{id}       => Poll.class
+    private DatabaseReference votesRef;                // polls/{id}/votes => Map<String,String>
+    private ChildEventListener votesChildEventListener;
+
+    private Poll poll;                                 // the object corresponding to polls/{id}
     private Business votedBusiness;
-    private DatabaseReference pollRef;      // polls/{id}
-    private Poll poll;                      // the object corresponding to polls/{id}
-    private DatabaseReference voteRef;      // polls/{id}/votes/{id}/  key-value <String, String>
     private String userId;
+    private VoteResults voteResults;
+    private Vote currentUserVote;
+
 
     public static Intent newIntent(Context context, String pollId) {
         Intent intent = new Intent(context, ListActivity.class);
@@ -65,15 +69,20 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         setContentView(R.layout.activity_list);
 
         userId = getCurrentUserId();
-        voteButton = (Button) findViewById(R.id.rv_vote_btn);
+        voteResults = new VoteResults();
 
         // This seems like the only way you can instantiate a toast object.
         mToast = Toast.makeText(this, TOAST_WELCOME_MSG, Toast.LENGTH_SHORT);
-        mToast.setGravity(Gravity.TOP, 0, 0);
-        mToast.setDuration(Toast.LENGTH_LONG);
+        mToast.setDuration(Toast.LENGTH_SHORT);
         mToast.show();
 
-        initializeDatabaseReference();
+        createDatabaseReference();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        destroyDatabaseReference();
     }
 
     private void initializedRecyclerView(boolean enableVote) {
@@ -92,42 +101,44 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
 
     @Override
     public void onVoteCheckboxClick(Business business, boolean swiped) {
-        String toastMessage = "";
-
         if (swiped) {
-            toastMessage = "Voted for " + business.getName();
             votedBusiness = business;
         } else {
-            toastMessage = "Switched off for " + business.getName();
             votedBusiness = null;
         }
 
-        showShortToast(toastMessage);
+        sendVote();
     }
 
     /**
      * set up Firebase Database Reference to the polls node and the current vote node
      */
-    private void initializeDatabaseReference() {
+    private void createDatabaseReference() {
         String pollId = getExtraPollId(getIntent());
         pollRef = buildPollRef(pollId);
-        voteRef = buildVoteRef(pollRef, userId);
         attachSingleValueListenerToPoll();
+
+        votesRef = buildVotesRef(pollRef);
+        votesChildEventListener = getVotesChildEventListener();
+        attachChildEventListener(votesRef, votesChildEventListener);
+    }
+
+    private void destroyDatabaseReference() {
+        detachChildEventListener(votesRef, votesChildEventListener);
     }
 
     //For SendMyVote Button
-    public void sendVote(View v) {
+    public void sendVote() {
         // Don't send vote if they user haven't voted yet!
         if (votedBusiness == null) {
             showShortToast(TOAST_VOTE_ABSENT);
             return;
         }
 
-        // Business' id may look like business' name: "good-burger-place"
-        Vote vote = new Vote(userId, votedBusiness.getId());
+        currentUserVote =  new Vote(userId, votedBusiness.getId());
 
         // Warning, the vote is not recorded onto the Poll.class, only onto firebase json node
-        writeVoteToFirebase(voteRef, vote);
+        writeVoteToFirebase(votesRef, currentUserVote);
         showShortToast(buildChoiceMessage(votedBusiness));
     }
 
@@ -140,8 +151,10 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         mToast.show();
     }
 
-    private void writeVoteToFirebase(DatabaseReference userVoteReference, Vote vote) {
-        userVoteReference.setValue(vote.getBusinessId());
+    private void writeVoteToFirebase(DatabaseReference inputVoteRef, Vote vote) {
+        inputVoteRef
+                .child(vote.getUserId())
+                .setValue(vote.getBusinessId());
     }
 
     /**
@@ -153,11 +166,11 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
     }
 
     /**
-     * polls/{poll_id}/votes{user_id}/
+     * polls/{poll_id}/votes
      * Return Database reference of the currently logged in user voting JSON tree.
      */
-    public DatabaseReference buildVoteRef(DatabaseReference pollReference, String userId) {
-        return pollReference.child(VOTES_TREE).child(userId);
+    public DatabaseReference buildVotesRef(DatabaseReference pollReference) {
+        return pollReference.child(VOTES_TREE);
     }
 
     /**
@@ -182,23 +195,36 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
                 if (poll == null) return;   // bad data, don't precede
 
                 boolean canVote = isCurrentUserInvited(poll.getVoters());
+                displayVoteDialog(canVote);
+                updateUI(canVote);
 
 
-                if (canVote) {
-                    displayNamesOfVoterDialog(poll.getVoters());
-                } else {
-                    displayDeniedDialog();
+                // Get the user recorded vote if they have one and update the adapter.
+                // If the user is not invited or none is recorded, nothing will happen
+                String possibleBusinessId =
+                        (String) dataSnapshot.child("votes").child(getCurrentUserId()).getValue();
+                if (possibleBusinessId != null) {
+                    currentUserVote = new Vote(getCurrentUserId(), possibleBusinessId);
+                    rVoteAdapter.recordVote(currentUserVote);
                 }
-
-                // Adjust the ui base on whether the user is an invited voter
-                voteButton.setEnabled(canVote);
-                initializedRecyclerView(canVote);
-                rVoteAdapter.swapData(poll.getBusinesses());
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) { }
         };
+    }
+
+    private void updateUI(boolean canVote) {
+        initializedRecyclerView(canVote);
+        rVoteAdapter.swapData(poll.getBusinesses());
+    }
+
+    private void displayVoteDialog(boolean canVote) {
+        if (canVote) {
+            displayNamesOfVoterDialog(poll.getVoters());
+        } else {
+            displayDeniedDialog();
+        }
     }
 
     /**
@@ -247,7 +273,6 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         dialog.show();
     }
 
-
     /**
      * Given a list of users, return a list of each users name
      */
@@ -278,4 +303,47 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         dialog.show();
     }
 
+
+    /**
+     * This listener will listen the key (UserId) and the value (businessId) of all votes made in:
+     * {some_database_reference}/votes. Attach it to a references that contains this key/values pair
+     */
+    private ChildEventListener getVotesChildEventListener() {
+        return new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                Vote vote = new Vote(dataSnapshot.getKey(), (String) dataSnapshot.getValue());
+                voteResults.recordVote(vote);
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                Vote vote = new Vote(dataSnapshot.getKey(), (String) dataSnapshot.getValue());
+                voteResults.recordVote(vote);
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) { }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) { }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) { }
+        };
+    }
+
+    private void attachChildEventListener(DatabaseReference reference,
+                                          ChildEventListener childEventListener) {
+        if (childEventListener != null) {
+            reference.addChildEventListener(childEventListener);
+        }
+    }
+
+    private void detachChildEventListener(DatabaseReference reference,
+                                          ChildEventListener childEventListener) {
+        if(childEventListener != null) {
+            reference.removeEventListener(childEventListener);
+        }
+    }
 }

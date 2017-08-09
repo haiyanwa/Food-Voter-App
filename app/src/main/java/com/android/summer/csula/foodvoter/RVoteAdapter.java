@@ -1,8 +1,9 @@
 package com.android.summer.csula.foodvoter;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 
 import com.android.summer.csula.foodvoter.models.BusinessVoteHelper;
+import com.android.summer.csula.foodvoter.models.Vote;
 import com.android.summer.csula.foodvoter.yelpApi.models.Business;
 import com.android.summer.csula.foodvoter.yelpApi.models.Category;
 import com.squareup.picasso.Picasso;
@@ -81,6 +83,28 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
         this.notifyDataSetChanged();
     }
 
+    public void recordVote(Vote vote) {
+        for (BusinessVoteHelper businessVoteHelper : mChoiceData) {
+            String businessId = businessVoteHelper.getBusiness().getId();
+
+            if (businessId.equals(vote.getBusinessId())) {
+                deselectAll();
+                businessVoteHelper.setSelected(true);
+                notifyDataSetChanged();
+                return;
+            }
+        }
+    }
+
+    /**
+     * Set BusinessVoteHelper.isSelected to false for all values in mChoiceData
+     */
+    private void deselectAll() {
+        for (BusinessVoteHelper businessVoteHelper : mChoiceData) {
+            businessVoteHelper.setSelected(false);
+        }
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder implements View.OnLongClickListener, View.OnClickListener {
 
         public TextView choiceItemView;
@@ -139,23 +163,19 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
                 choiceRatingView.setRating((float) business.getRating());
 
                 String imageUri = business.getImageUrl();
-                Picasso.with(view.getContext()).load(imageUri).fit().centerCrop()
-                        .placeholder(R.drawable.restaurant_default_image)
-                        .into(choiceImageView);
-
+                // Sometime Yelps returns an empty URI, check to prevent an IllegalArgumentException
+                if(!TextUtils.isEmpty(imageUri)) {
+                    Picasso.with(view.getContext())
+                            .load(imageUri)
+                            .fit()
+                            .centerCrop()
+                            .placeholder(R.drawable.restaurant_default_image)
+                            .into(choiceImageView);
+                }
 
                 // Switch are checked base on its model (BusinessVoteHelper)
                 BusinessVoteHelper voteHelper = mChoiceData.get(position);
                 voteCheckbox.setChecked(voteHelper.isSelected());
-            }
-        }
-
-        /**
-         * Set BusinessVoteHelper.isSelected to false for all values in mChoiceData
-         */
-        private void deselectAll() {
-            for (BusinessVoteHelper businessVoteHelper : mChoiceData) {
-                businessVoteHelper.setSelected(false);
             }
         }
 
