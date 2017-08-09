@@ -154,7 +154,7 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
     private void writeVoteToFirebase(DatabaseReference inputVoteRef, Vote vote) {
         inputVoteRef
                 .child(vote.getUserId())
-                .setValue(vote.getBusinessName());
+                .setValue(vote.getBusinessId());
     }
 
     /**

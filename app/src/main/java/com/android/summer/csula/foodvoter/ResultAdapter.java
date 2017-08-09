@@ -42,7 +42,7 @@ public class ResultAdapter extends ArrayAdapter<VoteResult> {
 
         VoteResult vResult = getItem(position);
 
-        businessNameView.setText(vResult.getBusinessName());
+        businessNameView.setText(vResult.getBusinessId());
         voteCountView.setText(vResult.getCount().toString());
 
         return convertView;
@@ -57,7 +57,7 @@ public class ResultAdapter extends ArrayAdapter<VoteResult> {
         //replace the old data with new data and force the recyclerView to refresh
         ArrayList<VoteResult> results = new ArrayList<>();
         for(VoteResult voteResult : voteResults){
-            Log.d(TAG, "voteResult " + voteResult.getBusinessName());
+            Log.d(TAG, "voteResult " + voteResult.getBusinessId());
             results.add(voteResult);
         }
         this.mVoteResults = results;

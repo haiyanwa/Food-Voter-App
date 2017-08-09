@@ -6,13 +6,13 @@ package com.android.summer.csula.foodvoter.models;
 
 public class Vote {
     private String userId;
-    private String businessName;
+    private String businessId;
 
     public Vote() {}
 
-    public Vote(String id, String businessName) {
+    public Vote(String id, String businessId) {
         this.userId = id;
-        this.businessName = businessName;
+        this.businessId = businessId;
     }
 
     public String getUserId() {
@@ -23,11 +23,11 @@ public class Vote {
         this.userId = userId;
     }
 
-    public String getBusinessName() {
-        return businessName;
+    public String getBusinessId() {
+        return businessId;
     }
 
-    public void setBusinessName(String businessName) {
-        this.businessName = businessName;
+    public void setBusinessId(String businessId) {
+        this.businessId = businessId;
     }
 }
