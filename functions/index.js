@@ -4,7 +4,7 @@ admin.initializeApp(functions.config().firebase);
 
 
 // Keep TTL short for demonstration purposes
-const TIME_TO_LIVE = 60; // seconds
+const TIME_TO_LIVE = 0; // seconds
 
 // Send a Heads-Up Notification to all the invited voters whenever
 // a poll is created
