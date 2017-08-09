@@ -13,6 +13,7 @@ public class Vote {
     public Vote(String userId, String businessId) {
         this.userId = userId;
         this.businessId = businessId;
+
     }
 
     public String getUserId() {
@@ -29,13 +30,5 @@ public class Vote {
 
     public void setBusinessId(String businessId) {
         this.businessId = businessId;
-    }
-
-    @Override
-    public String toString() {
-        return "Vote{" +
-                "userId='" + userId + '\'' +
-                ", businessId='" + businessId + '\'' +
-                '}';
     }
 }
