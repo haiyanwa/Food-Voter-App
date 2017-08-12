@@ -9,6 +9,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 
 import com.android.summer.csula.foodvoter.models.User;
 import com.android.summer.csula.foodvoter.models.Vote;
@@ -339,5 +340,12 @@ public class ListActivity extends AppCompatActivity implements RVoteAdapter.OnBu
         if (childEventListener != null) {
             reference.removeEventListener(childEventListener);
         }
+    }
+
+    //For SendMyVote Button
+    public void checkVoteResult(View v){
+        Intent intent = new Intent(this, TableResultActivity.class);
+        intent.putExtra(EXTRA_POLL, getExtraPollId(getIntent()));
+        startActivity(intent);
     }
 }

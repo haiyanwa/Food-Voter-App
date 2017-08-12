@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.RatingBar;
@@ -90,8 +91,10 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
         Context context = parent.getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
+
         View view = inflater.inflate(R.layout.list_item, parent, false);
         return new ViewHolder(view);
     }
@@ -153,6 +156,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
         public RatingBar choiceRatingView;
         public CheckBox voteCheckbox;
         private TextView voteCountTextView;
+        private Button voteResultButton;
         private View view;
 
         public ViewHolder(View view) {
@@ -165,6 +169,7 @@ public class RVoteAdapter extends RecyclerView.Adapter<RVoteAdapter.ViewHolder> 
             choiceRatingView = (RatingBar) view.findViewById(R.id.rv_choice_ratingBar);
             voteCheckbox = (CheckBox) view.findViewById(R.id.rv_vote_checkbox);
             voteCountTextView =(TextView) view.findViewById(R.id.vote_count);
+            voteResultButton = (Button) view.findViewById(R.id.rv_vote_result_btn);
 
             // Use long click over normal because people keep accidently clicking on the view
             // when they trying to click on the checkbox
